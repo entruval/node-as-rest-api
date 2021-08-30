@@ -5,7 +5,7 @@ const express = require('express'),
 
 
 // connect to database
-mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true })
+mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true, useUnifiedTopology: true })
 const db = mongoose.connection
 db.on('error', (error) => console.log(error))
 db.once('open', () => console.log('Connected to Database'))
@@ -14,8 +14,18 @@ db.once('open', () => console.log('Connected to Database'))
 // set server to accept JSON body
 app.use(express.json())
 
+// home
+app.get('/', function(req, res) {
+  res.status(200).json("Server Active")
+});
+
 const subscribersRouter = require('./routes/subscribers')
 app.use('/subscribers', subscribersRouter)
 
-app.listen(8080, () => {console.log('Server started')})
+// 404
+app.get('*', function(req, res){
+   res.status(404).send('Sorry, this is an invalid URL.');
+});
+
+app.listen(3000, () => {console.log('Server started')})
 

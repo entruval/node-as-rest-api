@@ -7,7 +7,7 @@ const express = require('express'),
 router.get('/', async (req, res) => {
   try {
     const subscribers = await Subscriber.find()
-    res.json(subscribers)
+    res.status(200).json(subscribers)
   }
   catch (err) { res.status(500).json({ message: err.message }) }
 })
@@ -15,7 +15,10 @@ router.get('/', async (req, res) => {
 
 // show
 router.get('/:id', getSubscriber, (req, res) => {
-  res.json(res.subscriber)
+  try {
+    res.status(200).json(res.subscriber)
+  }
+  catch (err) { res.status(500).json({ message: err.message }) }
 })
 
 
