@@ -1,79 +1,64 @@
 const express = require('express'),
-      router = express.Router(),
-      Subscriber = require('../models/subscriber')
+      Redis = require('redis')
+
+const router = express.Router(),
+      redis = Redis.createClient()
 
 
 // index
 router.get('/', async (req, res) => {
-  try {
-    const subscribers = await Subscriber.find()
-    res.status(200).json(subscribers)
-  }
-  catch (err) { res.status(500).json({ message: err.message }) }
+  const getAll = require("../domains/subscribers/queries/getAll.js")
+  redis.get("subscribers", async (err, result) => {
+    if (err) console.error(err)
+    if (result) { res.status(200).json(JSON.parse(result)) }
+    else {
+      try {
+        const {status, result} = await getAll()
+        redis.setex("subscribers", 900, JSON.stringify(result))
+        res.status(status).json(result)
+      }
+      catch (err) { res.status(500).json({ message: err.message }) }
+    }
+  })
 })
 
 
 // show
-router.get('/:id', getSubscriber, (req, res) => {
-  try {
-    res.status(200).json(res.subscriber)
-  }
-  catch (err) { res.status(500).json({ message: err.message }) }
+router.get('/:id', async (req, res) => {
+  const getOne = require("../domains/subscribers/queries/getOne.js")
+  const {status, result} = await getOne(req.params.id)
+
+  res.status(status).json(result)
 })
 
 
 // create
 router.post('/', async (req, res) => {
-  const subscriber = new Subscriber({
-    name: req.body.name,
-    subscribedToChannel: req.body.subscribedToChannel
-  })
-
-  try {
-    const newSubscriber = await subscriber.save()
-    res.status(201).json(newSubscriber)
-  }
-  catch (err) { res.status(400).json({ message: err.message }) }
+  const create = require("../domains/subscribers/services/create.js"),
+        {status, result} = await create(req.body.name, req.body.subscribedToChannel)
+  if (status == 201) redis.del("subscribers")
+  res.status(status).json(result)
 })
 
 
 // update
-router.patch('/:id', getSubscriber, async (req, res) => {
-  if (req.body.name != null) res.subscriber.name = req.body.name
-  if (req.body.name != null) res.subscriber.subscribedToChannel = req.body.subscribedToChannel
+router.patch('/:id', async (req, res) => {
+  const update = require("../domains/subscribers/services/update.js"),
+        {status, result} = await update(req.params.id, req.body.name, req.body.subscribedToChannel)
 
-  try {
-    const updatedSubscriber = await res.subscriber.save()
-    res.status(200).json(updatedSubscriber)
-  }
-  catch (err) { res.status(400).json({ message: err.message }) }
+  if (status == 200) redis.del("subscribers")
+  res.status(status).json(result)
 })
 
 
-// delete
-router.delete('/:id', getSubscriber, async (req, res) => {
-  try {
-    await res.subscriber.remove()
-    res.status(200).json({ message: 'Subscriber deleted' })
-  }
-  catch (err) { res.status(500).json({ message: err.message }) }
+// destroy
+router.delete('/:id', async (req, res) => {
+  const destroy = require("../domains/subscribers/services/destroy.js"),
+        {status, result} = await destroy(req.params.id)
+  
+  if (status == 200) redis.del("subscribers")
+  res.status(status).json(result)
 })
-
-
-// functions
-
-async function getSubscriber(req, res, next) {
-  let subscriber
-  try {
-    subscriber = await Subscriber.findById(req.params.id)
-
-    if (subscriber == null) return res.status(404).json({ message: 'Cannot find subscriber' })
-  }
-  catch (err) { res.status(500).json({ message: err.message }) }
-
-  res.subscriber = subscriber
-  next()
-}
 
 
 module.exports = router
