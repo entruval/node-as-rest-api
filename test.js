@@ -1,20 +1,33 @@
-const axios = require('axios')
+class Calculator {
+  constructor() {
+    this.value = 0
+  }
 
-function create() {
-  axios.post('http://localhost:3000/subscribers', {
-    name: "bacasdasdasd",
-    subscribedToChannel: "test"
-  })
-  .then(function (response) {
-    // console.log(response.data);
-  })
-  .catch(function (error) {
-    console.log(error);
-  });
+  add(value) {
+    this.value = this.value + value
+    return this.value
+  }
+
+  subtract(value) {
+    this.value = this.value - value
+  }
+
+  multiply(value) {
+    this.value = this.value * value
+  }
+
+  divide(value) {
+    this.value = this.value / value
+  }
 }
 
-
-for (let i = 0; i < 10000; i++) {
-  create()
-  console.log(i)
+const calculator = new Calculator()
+async function a() {
+  let a = await calculator.add(10)
+  let b = await calculator.add(a)
+  console.log(b)
 }
+a()
+
+
+console.log(calculator.value)

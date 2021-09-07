@@ -13,7 +13,6 @@ module.exports = async function create(name, subscribedToChannel) {
 
   try {
     const subscriber = await newSubscriber.save()
-
     return { status: 201, result: subscriber }
   }
   catch (err) {

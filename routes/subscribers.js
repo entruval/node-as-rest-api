@@ -10,7 +10,7 @@ router.get('/', async (req, res) => {
   const getAll = require("../domains/subscribers/queries/getAll.js")
   redis.get("subscribers", async (err, result) => {
     if (err) console.error(err)
-    if (result) { res.status(200).json(JSON.parse(result)) }
+    if (result) { res.status(304).json(JSON.parse(result)) }
     else {
       try {
         const {status, result} = await getAll()
